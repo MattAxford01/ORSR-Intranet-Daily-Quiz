@@ -1,0 +1,1803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Daily Sports Quiz</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+  <style>
+    body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #507eee;
+}
+    .question-box {
+      background-color: #ff5e30;
+      color: white;
+    }
+    .answer-btn {
+      transition: all 0.3s ease;
+      background-color: white;
+    }
+    .answer-btn:hover {
+      transform: translateY(-2px);
+    }
+    .correct {
+      background-color: #4ade80 !important;
+      color: #166534 !important;
+    }
+    .incorrect {
+      background-color: #f87171 !important;
+      color: #7f1d1d !important;
+    }
+    @media (max-width: 768px) {
+      .quiz-layout {
+        flex-direction: column;
+      }
+      .question-section {
+        width: 100% !important;
+        padding-right: 0 !important;
+        margin-bottom: 1rem;
+      }
+      .answers-section {
+        width: 100% !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="p-4">
+    <div class="rounded-xl p-4 md:p-5">
+      <div class="flex justify-end mb-4">
+        <p class="text-white text-sm" id="current-date"></p>
+      </div>
+      <div class="quiz-layout flex flex-row">
+        <div class="question-section w-1/3 pr-4">
+          <div class="question-box rounded-lg p-4 h-full flex items-center">
+            <p class="font-medium" id="question"></p>
+          </div>
+        </div>
+        <div class="answers-section w-2/3">
+          <div class="grid grid-cols-2 gap-3" id="answers-container"></div>
+          <div id="feedback" class="mt-3 text-center hidden">
+            <p id="feedback-text" class="font-medium"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    
+const quizQuestions = [
+ {
+    question: "Which team has won the most Super Bowls in NFL history?",
+    answers: ["New England Patriots", "Pittsburgh Steelers", "Dallas Cowboys", "San Francisco 49ers"],
+    correctAnswer: 0
+  },
+  {
+    question: "Who holds the record for the most Grand Slam tennis titles?",
+    answers: ["Roger Federer", "Rafael Nadal", "Novak Djokovic", "Serena Williams"],
+    correctAnswer: 2
+  },
+  {
+    question: "Which country has won the most FIFA World Cup titles?",
+    answers: ["Germany", "Italy", "Argentina", "Brazil"],
+    correctAnswer: 3
+  },
+  {
+    question: "In which sport would you perform a 'slam dunk'?",
+    answers: ["Volleyball", "Basketball", "Tennis", "Football"],
+    correctAnswer: 1
+  },
+  {
+    question: "Who is the all-time leading scorer in NBA history?",
+    answers: ["Michael Jordan", "Kobe Bryant", "LeBron James", "Kareem Abdul-Jabbar"],
+    correctAnswer: 2
+  },
+  {
+    question: "Which Olympic sport features the 'Fosbury Flop' technique?",
+    answers: ["High Jump", "Diving", "Gymnastics", "Swimming"],
+    correctAnswer: 0
+  },
+  {
+    question: "In golf, what is the term for completing a hole one stroke under par?",
+    answers: ["Eagle", "Birdie", "Bogey", "Ace"],
+    correctAnswer: 1
+  },
+  {
+    question: "Which country has won the most Olympic medals in history?",
+    answers: ["Russia", "China", "USA", "Germany"],
+    correctAnswer: 2
+  },
+  {
+    question: "What is the standard distance of a marathon?",
+    answers: ["42.195 km", "40 km", "26.2 km", "41.5 km"],
+    correctAnswer: 0
+  },
+  {
+    question: "Which Australian city hosted the 1956 Summer Olympics?",
+    answers: ["Sydney", "Melbourne", "Brisbane", "Perth"],
+    correctAnswer: 1
+  },
+  {
+    question: "Which Australian swimmer won 5 Olympic gold medals in their career?",
+    answers: ["Ian Thorpe", "Grant Hackett", "Kieren Perkins", "Kyle Chalmers"],
+    correctAnswer: 0
+  },
+  {
+    question: "Which Grand Slam tennis tournament is played on clay?",
+    answers: ["Wimbledon", "US Open", "French Open", "Australian Open"],
+    correctAnswer: 2
+  },
+  {
+    question: "What colour jersey does the Tour de France leader wear?",
+    answers: ["Green", "Yellow", "Polka Dot", "White"],
+    correctAnswer: 1
+  },
+  {
+    question: "Which cricket format is limited to 20 overs per side?",
+    answers: ["ODI", "Test", "T20", "Super Over"],
+    correctAnswer: 2
+  },
+  {
+    question: "Which Paralympian has won the most medals for Australia?",
+    answers: ["Matt Cowdrey", "Kurt Fearnley", "Ellie Cole", "Jacqueline Freney"],
+    correctAnswer: 3
+  },
+  {
+    question: "How many players are on a netball team on court?",
+    answers: ["5", "6", "7", "8"],
+    correctAnswer: 2
+  },
+  {
+    question: "Which sport uses the terms 'bogey', 'eagle', and 'birdie'?",
+    answers: ["Tennis", "Golf", "Surfing", "Baseball"],
+    correctAnswer: 1
+  },
+  {
+    question: "Which Australian won gold in BMX at the Tokyo 2020 Olympics?",
+    answers: ["Caroline Buchanan", "Saya Sakakibara", "Logan Martin", "Sam Willoughby"],
+    correctAnswer: 2
+  },
+  {
+    question: "Which country hosted the 2016 Summer Olympics?",
+    answers: ["Japan", "Brazil", "UK", "USA"],
+    correctAnswer: 1
+  },
+  {
+    question: "Which NRL team won the 2023 Premiership?",
+    answers: ["Penrith Panthers", "Melbourne Storm", "Brisbane Broncos", "South Sydney Rabbitohs"],
+    correctAnswer: 0
+  },
+  {
+    question: "In AFL, how many points is a goal worth?",
+    answers: ["3", "6", "7", "1"],
+    correctAnswer: 1
+  },
+  {
+    question: "Who was the first female athlete to win 5 Olympic gold medals in track and field?",
+    answers: ["Shelly-Ann Fraser-Pryce", "Allyson Felix", "Florence Griffith Joyner", "Jackie Joyner-Kersee"],
+    correctAnswer: 1
+  },
+  {
+    question: "Which team won the FIFA Women’s World Cup in 2023?",
+    answers: ["USA", "Spain", "England", "Germany"],
+    correctAnswer: 1
+  },
+  {
+    question: "What is the name of the Paralympic sport for blind athletes using a ball with bells?",
+    answers: ["Boccia", "Goalball", "Blind Soccer", "Sitting Volleyball"],
+    correctAnswer: 1
+  },
+  {
+    question: "Which Aussie Rules player holds the record for most games played?",
+    answers: ["Brent Harvey", "Dustin Fletcher", "Shaun Burgoyne", "Joel Selwood"],
+    correctAnswer: 0
+  },
+  {
+  question: "What is the distance of an Olympic swimming pool?",
+  answers: ["25m", "33m", "50m", "100m"],
+  correctAnswer: 2
+},
+{
+  question: "Which Australian city hosts the Tour Down Under cycling race?",
+  answers: ["Melbourne", "Adelaide", "Sydney", "Canberra"],
+  correctAnswer: 1
+},
+{
+  question: "Which cricket ground is known as 'The G'?",
+  answers: ["SCG", "WACA", "MCG", "Gabba"],
+  correctAnswer: 2
+},
+{
+  question: "Which athlete lit the cauldron at the Sydney 2000 Olympics?",
+  answers: ["Cathy Freeman", "Ian Thorpe", "Nova Peris", "Susie O’Neill"],
+  correctAnswer: 0
+},
+{
+  question: "In rugby union, how many points is a try worth?",
+  answers: ["3", "5", "4", "6"],
+  correctAnswer: 1
+},
+{
+  question: "Which country won the most gold medals at Tokyo 2020 Olympics?",
+  answers: ["USA", "China", "Japan", "Australia"],
+  correctAnswer: 0
+},
+{
+  question: "What colour is the centre circle in a netball court?",
+  answers: ["White", "Red", "Blue", "Yellow"],
+  correctAnswer: 0
+},
+{
+  question: "Which Australian won gold in women's javelin at Tokyo 2020?",
+  answers: ["Kim Mickle", "Kelsey-Lee Barber", "Kathryn Mitchell", "Tessa Sanderson"],
+  correctAnswer: 1
+},
+{
+  question: "What is the name of the international rugby competition with Australia, NZ, South Africa and Argentina?",
+  answers: ["Rugby Cup", "Tri Nations", "Rugby Championship", "Four Nations"],
+  correctAnswer: 2
+},
+{
+  question: "What event combines swimming, cycling, and running?",
+  answers: ["Pentathlon", "Heptathlon", "Decathlon", "Triathlon"],
+  correctAnswer: 3
+},
+{
+  question: "How many players are on a soccer team on the field (including goalkeeper)?",
+  answers: ["10", "11", "12", "9"],
+  correctAnswer: 1
+},
+{
+  question: "Which Winter Olympic sport involves sliding stones on ice toward a target?",
+  answers: ["Luge", "Skeleton", "Curling", "Bobsleigh"],
+  correctAnswer: 2
+},
+{
+  question: "What is the name of the Australian women’s domestic football league?",
+  answers: ["Matildas League", "W-League", "AFLW", "FA Women's League"],
+  correctAnswer: 1
+},
+{
+  question: "Who won gold in women’s 100m sprint at Tokyo 2020?",
+  answers: ["Elaine Thompson-Herah", "Shelly-Ann Fraser-Pryce", "Sha'Carri Richardson", "Dina Asher-Smith"],
+  correctAnswer: 0
+},
+{
+  question: "Which sport includes 'power play', 'slog sweep', and 'bouncer'?",
+  answers: ["Baseball", "Rugby", "Tennis", "Cricket"],
+  correctAnswer: 3
+},
+{
+  question: "What’s the nickname of the Australian national basketball team?",
+  answers: ["Boomers", "Opals", "Wallabies", "Socceroos"],
+  correctAnswer: 0
+},
+{
+  question: "Which state is known for producing elite swimmers via the South Australian Sports Institute (SASI)?",
+  answers: ["Queensland", "New South Wales", "Victoria", "South Australia"],
+  correctAnswer: 3
+},
+{
+  question: "Who is the only athlete to win Olympic gold medals in both Summer and Winter Games?",
+  answers: ["Clara Hughes", "Eddie Eagan", "Eric Heiden", "Jacqui Cooper"],
+  correctAnswer: 1
+},
+{
+  question: "In baseball, how many strikes before a batter is out?",
+  answers: ["2", "3", "4", "5"],
+  correctAnswer: 1
+},
+{
+  question: "Which Paralympic sport uses a throwing frame and javelin-like spear?",
+  answers: ["Discus", "Shot Put", "Javelin", "Club Throw"],
+  correctAnswer: 3
+},
+{
+  question: "Which Aussie Rules team won the AFL Grand Final in 2023?",
+  answers: ["Collingwood", "Brisbane", "Geelong", "Carlton"],
+  correctAnswer: 0
+},
+{
+  question: "Which tennis player famously won all 4 Grand Slams in 1988?",
+  answers: ["Martina Navratilova", "Steffi Graf", "Serena Williams", "Monica Seles"],
+  correctAnswer: 1
+},
+{
+  question: "How many lanes are typically in an Olympic athletics track?",
+  answers: ["6", "8", "9", "10"],
+  correctAnswer: 1
+},
+{
+  question: "What colour medals are awarded for first, second, and third place?",
+  answers: ["Platinum, Silver, Bronze", "Gold, Silver, Bronze", "Gold, Blue, Red", "Silver, Gold, Bronze"],
+  correctAnswer: 1
+},
+{
+  question: "What is the name of the famous cricket urn awarded in the Ashes?",
+  answers: ["The Cup", "The Trophy", "The Urn", "The Jug"],
+  correctAnswer: 2
+},
+{
+  question: "Which country hosted the first modern Olympic Games in 1896?",
+  answers: ["France", "Greece", "USA", "Italy"],
+  correctAnswer: 1
+},
+{
+  question: "Who is the only swimmer to win gold medals at five different Olympic Games?",
+  answers: ["Michael Phelps", "Ian Thorpe", "Mark Spitz", "Dawn Fraser"],
+  correctAnswer: 0
+},
+{
+  question: "Which AFL club is based at Alberton Oval?",
+  answers: ["Adelaide Crows", "Port Adelaide Power", "Fremantle Dockers", "Essendon Bombers"],
+  correctAnswer: 1
+},
+{
+  question: "How many players are there on a water polo team in the pool?",
+  answers: ["6", "7", "8", "9"],
+  correctAnswer: 1
+},
+{
+  question: "Which Australian city hosted the 1982 Commonwealth Games?",
+  answers: ["Brisbane", "Sydney", "Perth", "Melbourne"],
+  correctAnswer: 0
+},
+{
+  question: "Which sport is Ash Barty best known for?",
+  answers: ["Cricket", "Hockey", "Tennis", "Golf"],
+  correctAnswer: 2
+},
+{
+  question: "In cycling, what does 'peloton' mean?",
+  answers: ["The sprint zone", "The uphill climb", "Main group of riders", "Final stage"],
+  correctAnswer: 2
+},
+{
+  question: "Which Australian Paralympian won the most golds at a single Games?",
+  answers: ["Ellie Cole", "Kurt Fearnley", "Jacqueline Freney", "Matt Cowdrey"],
+  correctAnswer: 2
+},
+{
+  question: "Which cricket team is nicknamed the 'Baggy Greens'?",
+  answers: ["Australia", "India", "England", "New Zealand"],
+  correctAnswer: 0
+},
+{
+  question: "Which Olympic event includes fencing, swimming, show jumping, running, and shooting?",
+  answers: ["Decathlon", "Modern Pentathlon", "Triathlon", "Heptathlon"],
+  correctAnswer: 1
+},
+{
+  question: "What year did Cathy Freeman win Olympic gold in the 400m?",
+  answers: ["1996", "2000", "2004", "2008"],
+  correctAnswer: 1
+},
+{
+  question: "Which country won the 2022 FIFA World Cup?",
+  answers: ["Argentina", "France", "Germany", "Brazil"],
+  correctAnswer: 0
+},
+{
+  question: "How many minutes in each half of a soccer match?",
+  answers: ["40", "45", "50", "60"],
+  correctAnswer: 1
+},
+{
+  question: "Which Australian athlete won a gold medal in women's surfing at Tokyo 2020?",
+  answers: ["Tyler Wright", "Sally Fitzgibbons", "Stephanie Gilmore", "Carissa Moore"],
+  correctAnswer: 2
+},
+{
+  question: "In tennis, what does 'love' mean?",
+  answers: ["Deuce", "Advantage", "Zero", "Match Point"],
+  correctAnswer: 2
+},
+{
+  question: "What is the nickname of the Australian women's national soccer team?",
+  answers: ["Opals", "Matildas", "Stingers", "Wallaroos"],
+  correctAnswer: 1
+},
+{
+  question: "What’s the total length of an Olympic triathlon swim leg?",
+  answers: ["750m", "1000m", "1500m", "2000m"],
+  correctAnswer: 2
+},
+{
+  question: "Which NBL team is based in South Australia?",
+  answers: ["Sydney Kings", "Adelaide 36ers", "Perth Wildcats", "Melbourne United"],
+  correctAnswer: 1
+},
+{
+  question: "Which event features the South Australian Sports Institute’s rowing program?",
+  answers: ["Murray River Regatta", "National Rowing Championships", "Head of the River", "Olympic Trials"],
+  correctAnswer: 1
+},
+{
+  question: "What colour is the jersey worn by the leader in the Giro d'Italia?",
+  answers: ["Yellow", "Pink", "Green", "White"],
+  correctAnswer: 1
+},
+{
+  question: "Which sport involves pommel horse and rings?",
+  answers: ["Weightlifting", "Gymnastics", "Wrestling", "Fencing"],
+  correctAnswer: 1
+},
+{
+  question: "Who won the women’s singles at Wimbledon in 2021?",
+  answers: ["Ash Barty", "Serena Williams", "Simona Halep", "Iga Świątek"],
+  correctAnswer: 0
+},
+{
+  question: "What’s the maximum number of points you can score in a single end of lawn bowls?",
+  answers: ["2", "4", "6", "8"],
+  correctAnswer: 3
+},
+{
+  question: "How many gold medals did Australia win at the 2020 Tokyo Olympics?",
+  answers: ["14", "15", "16", "17"],
+  correctAnswer: 2
+},
+{
+  question: "Which Australian football code has teams called the Rabbitohs, Roosters, and Storm?",
+  answers: ["AFL", "NRL", "Rugby Union", "Soccer"],
+  correctAnswer: 1
+},
+{
+  question: "What does SASI stand for?",
+  answers: ["South Australian Sports Institute", "Sports Academy of SA", "SA Sport Initiative", "State Athletics and Sports Institute"],
+  correctAnswer: 0
+},
+{
+  question: "Which Paralympic sport is played on a court with a lowered net and includes sitting?",
+  answers: ["Goalball", "Wheelchair Basketball", "Sitting Volleyball", "Para Badminton"],
+  correctAnswer: 2
+},
+{
+  question: "Who holds the world record in men's pole vault as of 2024?",
+  answers: ["Sam Kendricks", "Thiago Braz", "Armand Duplantis", "Renaud Lavillenie"],
+  correctAnswer: 2
+},
+{
+  question: "Which nation won the most medals at the 2020 Paralympic Games?",
+  answers: ["USA", "China", "Great Britain", "Russia"],
+  correctAnswer: 1
+},
+{
+  question: "Which sport includes terms like 'ace', 'double fault', and 'deuce'?",
+  answers: ["Badminton", "Volleyball", "Tennis", "Squash"],
+  correctAnswer: 2
+},
+{
+  question: "What sport does Dylan Alcott represent Australia in?",
+  answers: ["Wheelchair Basketball", "Wheelchair Rugby", "Quad Wheelchair Tennis", "Para Canoe"],
+  correctAnswer: 2
+},
+{
+  question: "Which sport features events like 'Clean and Jerk' and 'Snatch'?",
+  answers: ["Powerlifting", "Bodybuilding", "Weightlifting", "Strongman"],
+  correctAnswer: 2
+},
+{
+  question: "What distance is run in the steeplechase event?",
+  answers: ["1000m", "1500m", "2000m", "3000m"],
+  correctAnswer: 3
+},
+{
+  question: "Which city will host the 2032 Summer Olympics?",
+  answers: ["Melbourne", "Perth", "Sydney", "Brisbane"],
+  correctAnswer: 3
+},
+{
+  question: "Which sport is Ellie Cole known for?",
+  answers: ["Athletics", "Swimming", "Cycling", "Judo"],
+  correctAnswer: 1
+},
+{
+  question: "Which Australian athlete is known for the 'shoey' celebration in Formula One?",
+  answers: ["Mark Webber", "Oscar Piastri", "Daniel Ricciardo", "Jack Doohan"],
+  correctAnswer: 2
+},
+{
+  question: "Which position in netball starts the centre pass?",
+  answers: ["Centre", "Goal Attack", "Wing Defence", "Goal Keeper"],
+  correctAnswer: 0
+},
+{
+  question: "Which Olympic sport takes place on a piste?",
+  answers: ["Boxing", "Fencing", "Gymnastics", "Taekwondo"],
+  correctAnswer: 1
+},
+{
+  question: "Which sport does Madison de Rozario compete in?",
+  answers: ["Cycling", "Wheelchair Racing", "Swimming", "Para Canoe"],
+  correctAnswer: 1
+},
+{
+  question: "How many holes are played in a standard round of golf?",
+  answers: ["9", "18", "27", "36"],
+  correctAnswer: 1
+},
+{
+  question: "Which Australian athlete won gold in freestyle skiing at Beijing 2022?",
+  answers: ["Lydia Lassila", "Alisa Camplin", "Jakara Anthony", "Britt Cox"],
+  correctAnswer: 2
+},
+{
+  question: "Which sport includes techniques like 'kata' and 'kumite'?",
+  answers: ["Taekwondo", "Judo", "Karate", "Wrestling"],
+  correctAnswer: 2
+},
+{
+  question: "Which female Australian cricketer captained the national team as of 2024?",
+  answers: ["Ellyse Perry", "Meg Lanning", "Alyssa Healy", "Beth Mooney"],
+  correctAnswer: 2
+},
+{
+  question: "Which major sporting event is held in Melbourne every January?",
+  answers: ["F1 Grand Prix", "Australian Open", "Melbourne Cup", "Commonwealth Games"],
+  correctAnswer: 1
+},
+{
+  question: "What is the penalty distance for a penalty kick in soccer?",
+  answers: ["8 yards", "10 yards", "12 yards", "15 yards"],
+  correctAnswer: 2
+},
+{
+  question: "Which AFL club was established in 1997 and wears teal, black and white?",
+  answers: ["Adelaide Crows", "Fremantle Dockers", "Port Adelaide Power", "Gold Coast Suns"],
+  correctAnswer: 2
+},
+{
+  question: "Which para-sport uses a jack ball and coloured balls in competition?",
+  answers: ["Boccia", "Goalball", "Para Lawn Bowls", "Wheelchair Curling"],
+  correctAnswer: 0
+},
+{
+  question: "Who was Australia’s youngest ever Olympic medallist?",
+  answers: ["Ian Thorpe", "Sandra Morgan", "Dawn Fraser", "Emma McKeon"],
+  correctAnswer: 1
+},
+{
+  question: "Which cricket shot involves the batter hitting the ball over the shoulder to fine leg?",
+  answers: ["Cover Drive", "Reverse Sweep", "Pull Shot", "Ramp Shot"],
+  correctAnswer: 3
+},
+{
+  question: "Which Australian cyclist was part of the men's team pursuit squad that won gold at the Paris 2024 Olympics?",
+  answers: ["Luke Plapp", "Kelland O'Brien", "Alex Porter", "Alexander Hill"],
+  correctAnswer: 1
+},
+{
+  question: "Which city hosted the first Commonwealth Games in 1930?",
+  answers: ["London", "Auckland", "Hamilton", "Perth"],
+  correctAnswer: 2
+},
+{
+  question: "Which sport uses the term 'line-out'?",
+  answers: ["Rugby Union", "AFL", "Basketball", "Cricket"],
+  correctAnswer: 0
+},
+{
+  question: "Who was the first Indigenous Australian Olympic gold medallist?",
+  answers: ["Cathy Freeman", "Nova Peris", "Lionel Rose", "Percy Hobson"],
+  correctAnswer: 3
+},
+{
+  question: "Which Australian city hosted the 1956 Summer Olympics?",
+  answers: ["Sydney", "Melbourne", "Brisbane", "Adelaide"],
+  correctAnswer: 1
+},
+{
+  question: "What is the name of the Paralympic sport for athletes with vision impairment involving a ball with bells?",
+  answers: ["Boccia", "Para Football", "Goalball", "Sitting Volleyball"],
+  correctAnswer: 2
+},
+{
+  question: "Which team won the AFL premiership in 2022?",
+  answers: ["Geelong Cats", "Sydney Swans", "Richmond Tigers", "Collingwood Magpies"],
+  correctAnswer: 0
+},
+{
+  question: "What year did the Sydney Olympics take place?",
+  answers: ["1996", "2000", "2004", "2008"],
+  correctAnswer: 1
+},
+{
+  question: "Which famous Australian swimmer earned 5 Olympic gold medals?",
+  answers: ["Ian Thorpe", "Grant Hackett", "Emma McKeon", "Dawn Fraser"],
+  correctAnswer: 0
+},
+{
+  question: "Which athletics event involves throwing a heavy spherical object?",
+  answers: ["Javelin", "Discus", "Hammer Throw", "Shot Put"],
+  correctAnswer: 3
+},
+{
+  question: "What does a yellow card signify in soccer?",
+  answers: ["Substitution", "Minor Offense", "Goal Disallowed", "Foul"],
+  correctAnswer: 1
+},
+{
+  question: "Which tennis Grand Slam is played on grass?",
+  answers: ["Australian Open", "French Open", "Wimbledon", "US Open"],
+  correctAnswer: 2
+},
+{
+  question: "How many players are on the field for each AFL team during play?",
+  answers: ["16", "18", "20", "22"],
+  correctAnswer: 1
+},
+{
+  question: "Which swimmer broke the women's 100m freestyle world record in 2023?",
+  answers: ["Emma McKeon", "Cate Campbell", "Sarah Sjöström", "Mollie O’Callaghan"],
+  correctAnswer: 3
+},
+{
+  question: "What is the tagline of the South Australian Sports Institute (SASI)?",
+  answers: ["Strive for Success", "Powering Greatness", "Fueling Dreams", "Driven to Win"],
+  correctAnswer: 1
+},
+{
+  question: "Which cycling race includes stages like Alpe d’Huez and Champs-Élysées?",
+  answers: ["Vuelta a España", "Giro d’Italia", "Tour Down Under", "Tour de France"],
+  correctAnswer: 3
+},
+{
+  question: "Which former Matildas captain was inducted into Sport Australia Hall of Fame in 2022?",
+  answers: ["Clare Polkinghorne", "Sam Kerr", "Cheryl Salisbury", "Lisa De Vanna"],
+  correctAnswer: 2
+},
+{
+  question: "Which cricket competition features state-based teams like the Redbacks and Bushrangers?",
+  answers: ["BBL", "WBBL", "Sheffield Shield", "IPL"],
+  correctAnswer: 2
+},
+{
+  question: "What is the name of the main trophy awarded in Australian rugby league?",
+  answers: ["Sherrin Shield", "Bledisloe Cup", "NAB Cup", "Provan-Summons Trophy"],
+  correctAnswer: 3
+},
+{
+  question: "Which Olympic discipline combines running and shooting?",
+  answers: ["Biathlon", "Modern Pentathlon", "Cross Country", "Heptathlon"],
+  correctAnswer: 1
+},
+{
+  question: "Which female para-swimmer from Australia won multiple medals in Rio and Tokyo?",
+  answers: ["Ellie Cole", "Lakeisha Patterson", "Rachael Watson", "Katja Dedekind"],
+  correctAnswer: 0
+},
+{
+  question: "What is the length of a standard Olympic swimming pool?",
+  answers: ["25 metres", "33 metres", "50 metres", "100 metres"],
+  correctAnswer: 2
+},
+{
+  question: "Who is the only Australian tennis player to win a calendar Grand Slam?",
+  answers: ["Lleyton Hewitt", "Pat Rafter", "Rod Laver", "John Newcombe"],
+  correctAnswer: 2
+},
+{
+  question: "Which country did Australia defeat to win the 2023 ICC World Cup?",
+  answers: ["India", "New Zealand", "England", "Pakistan"],
+  correctAnswer: 0
+},
+{
+  question: "Which Winter Olympic sport involves racing down an icy track head-first?",
+  answers: ["Skeleton", "Luge", "Bobsleigh", "Speed Skating"],
+  correctAnswer: 0
+},
+{
+  question: "Which Australian para-athlete won 5 gold medals at the London 2012 Paralympics?",
+  answers: ["Matthew Cowdrey", "Kurt Fearnley", "Jacqueline Freney", "Ellie Cole"],
+  correctAnswer: 2
+},
+{
+  question: "Which Australian city hosts the annual Magic Round in the NRL?",
+  answers: ["Sydney", "Melbourne", "Brisbane", "Perth"],
+  correctAnswer: 2
+},
+{
+  question: "Which Australian sprinter made the 100m semi-final at the Tokyo 2020 Olympics?",
+  answers: ["Rohan Browning", "Jake Doran", "Patrick Johnson", "Jack Hale"],
+  correctAnswer: 0
+},
+{
+  question: "What is the maximum number of sets played in a Grand Slam men's tennis match?",
+  answers: ["3", "4", "5", "6"],
+  correctAnswer: 2
+},
+{
+  question: "Which AFLW team won the inaugural premiership in 2017?",
+  answers: ["Carlton", "Brisbane", "Adelaide", "Collingwood"],
+  correctAnswer: 2
+},
+{
+  question: "Which sport is associated with the Hopman Cup?",
+  answers: ["Cricket", "Tennis", "Golf", "Cycling"],
+  correctAnswer: 1
+},
+{
+  question: "Who was the first Indigenous Australian woman to win an Olympic gold medal?",
+  answers: ["Nova Peris", "Cathy Freeman", "Josie Carroll", "Leilani Mitchell"],
+  correctAnswer: 0
+},
+{
+  question: "Which Australian state is home to the AIS headquarters?",
+  answers: ["South Australia", "New South Wales", "Victoria", "ACT"],
+  correctAnswer: 3
+},
+{
+  question: "What is the name of the basketball competition for Australian universities?",
+  answers: ["Uni Games", "Uni Hoops", "University Basketball League", "Student Slam"],
+  correctAnswer: 2
+},
+{
+  question: "Which athletics event consists of 10 disciplines for men?",
+  answers: ["Heptathlon", "Decathlon", "Pentathlon", "Triathlon"],
+  correctAnswer: 1
+},
+{
+  question: "Which Australian female athlete won gold in the pole vault at the 2022 Commonwealth Games?",
+  answers: ["Alana Boyd", "Nina Kennedy", "Liz Parnov", "Kym Howe"],
+  correctAnswer: 1
+},
+{
+  question: "How many minutes is each half in a standard netball match?",
+  answers: ["10", "12", "15", "20"],
+  correctAnswer: 2
+},
+{
+  question: "Which colour jersey is worn by the leader in the Tour de France?",
+  answers: ["Green", "Polka Dot", "White", "Yellow"],
+  correctAnswer: 3
+},
+{
+  question: "Which Australian para-athlete starred in the documentary 'Rising Phoenix'?",
+  answers: ["Ellie Cole", "Ryley Batt", "Dylan Alcott", "Madison de Rozario"],
+  correctAnswer: 2
+},
+{
+  question: "What is the total number of players in a water polo team including substitutes?",
+  answers: ["7", "11", "13", "15"],
+  correctAnswer: 2
+},
+{
+  question: "Who won the men's singles title at the 2022 Australian Open?",
+  answers: ["Rafael Nadal", "Daniil Medvedev", "Novak Djokovic", "Nick Kyrgios"],
+  correctAnswer: 0
+},
+{
+  question: "Which sport awards the Brownlow Medal?",
+  answers: ["Cricket", "Rugby League", "AFL", "Basketball"],
+  correctAnswer: 2
+},
+{
+  question: "Which para-sport classifies athletes using T and F categories?",
+  answers: ["Para-swimming", "Para-cycling", "Para-athletics", "Goalball"],
+  correctAnswer: 2
+},
+{
+  question: "Which event did Jess Fox win gold in at Tokyo 2020?",
+  answers: ["C1 Canoe Slalom", "K1 Kayak Sprint", "C2 Canoe Sprint", "K1 Slalom"],
+  correctAnswer: 0
+},
+{
+  question: "In rugby league, how many points is a try worth?",
+  answers: ["3", "4", "5", "6"],
+  correctAnswer: 1
+},
+{
+  question: "What sport is associated with the Melbourne Cup?",
+  answers: ["Rowing", "Cycling", "Horse Racing", "Motorsport"],
+  correctAnswer: 2
+},
+{
+  question: "Which Indigenous footballer has the most AFL games played?",
+  answers: ["Cyril Rioli", "Eddie Betts", "Lance Franklin", "Shaun Burgoyne"],
+  correctAnswer: 3
+},
+{
+  question: "Which city hosted the 2023 Netball World Cup?",
+  answers: ["Sydney", "Auckland", "Cape Town", "London"],
+  correctAnswer: 2
+},
+{
+  question: "What is the term for scoring three goals in a soccer match?",
+  answers: ["Hat-trick", "Triple", "Treble", "Goal Rush"],
+  correctAnswer: 0
+},
+{
+  question: "Which Australian swimmer set a world record in the 400m freestyle at the 2023 World Championships?",
+  answers: ["Kyle Chalmers", "Elijah Winnington", "Sam Short", "Mack Horton"],
+  correctAnswer: 2
+},
+{
+  question: "How long is a standard Olympic triathlon swim leg?",
+  answers: ["750m", "1.5km", "2km", "2.5km"],
+  correctAnswer: 1
+},
+{
+  question: "Which Australian snowboarder won Olympic gold in the women’s snowboard cross at Beijing 2022?",
+  answers: ["Tess Coady", "Belle Brockhoff", "Zoi Sadowski-Synnott", "Jaclyn Narracott"],
+  correctAnswer: 0
+},
+{
+  question: "What colour card means a player is ejected in soccer?",
+  answers: ["Yellow", "Green", "Blue", "Red"],
+  correctAnswer: 3
+},
+{
+  question: "Which South Australian-born athlete won Olympic gold in rowing at Tokyo 2020?",
+  answers: ["Molly Goodman", "Jessica Morrison", "Alex Hill", "Annabelle McIntyre"],
+  correctAnswer: 2
+},
+{
+  question: "What is the distance of an Olympic marathon?",
+  answers: ["40km", "26.2 miles", "42.195km", "44.5km"],
+  correctAnswer: 2
+},
+{
+  question: "Which team won the Super Netball title in 2023?",
+  answers: ["Melbourne Vixens", "Adelaide Thunderbirds", "Giants Netball", "West Coast Fever"],
+  correctAnswer: 1
+},
+{
+  question: "Which Australian golfer won The Open Championship in 2022?",
+  answers: ["Cameron Smith", "Adam Scott", "Marc Leishman", "Jason Day"],
+  correctAnswer: 0
+},
+{
+  question: "In which sport do athletes use a foil, épée, or sabre?",
+  answers: ["Boxing", "Judo", "Fencing", "Archery"],
+  correctAnswer: 2
+},
+{
+  question: "Which nation did Australia beat in the 2022 Women’s Cricket World Cup final?",
+  answers: ["England", "India", "New Zealand", "South Africa"],
+  correctAnswer: 0
+},
+{
+  question: "Which sport does Ash Barty play professionally after tennis retirement?",
+  answers: ["Golf", "Cricket", "Netball", "Triathlon"],
+  correctAnswer: 0
+},
+{
+  question: "Which Australian rules footballer kicked the most goals in AFL history?",
+  answers: ["Tony Lockett", "Jason Dunstall", "Lance Franklin", "Gary Ablett Sr"],
+  correctAnswer: 0
+},
+{
+  question: "Which South Australian track cyclist won gold in men’s team sprint at Tokyo 2020?",
+  answers: ["Leigh Hoffman", "Matthew Glaetzer", "Nathan Hart", "Thomas Cornish"],
+  correctAnswer: 1
+},
+{
+  question: "Which Olympic event takes place in a velodrome?",
+  answers: ["Triathlon", "Canoe Sprint", "Track Cycling", "Equestrian"],
+  correctAnswer: 2
+},
+{
+  question: "Which Aussie basketballer played for the Golden State Warriors?",
+  answers: ["Patty Mills", "Joe Ingles", "Andrew Bogut", "Josh Giddey"],
+  correctAnswer: 2
+},
+{
+  question: "Which team won the NRL Grand Final in 2023?",
+  answers: ["Melbourne Storm", "Brisbane Broncos", "Penrith Panthers", "South Sydney Rabbitohs"],
+  correctAnswer: 2
+},
+{
+  question: "How many Olympic gold medals has Emma McKeon won?",
+  answers: ["3", "4", "5", "6"],
+  correctAnswer: 3
+},
+{
+  question: "Which Australian Paralympian has won the most gold medals in history?",
+  answers: ["Matthew Cowdrey", "Kurt Fearnley", "Jacqueline Freney", "Tim Sullivan"],
+  correctAnswer: 2
+},
+{
+  question: "In which Olympic sport do you perform a clean and jerk?",
+  answers: ["Powerlifting", "Bodybuilding", "Weightlifting", "Gymnastics"],
+  correctAnswer: 2
+},
+{
+  question: "Which team won the 2023 AFL Grand Final?",
+  answers: ["Collingwood", "Brisbane", "Carlton", "GWS Giants"],
+  correctAnswer: 0
+},
+{
+  question: "Which South Australian athlete won gold in the women’s marathon at the 2022 Commonwealth Games?",
+  answers: ["Lisa Weightman", "Jessica Hull", "Jess Stenson", "Ellie Pashley"],
+  correctAnswer: 2
+},
+{
+  question: "What is the nickname of Australia’s national men’s basketball team?",
+  answers: ["Kookaburras", "Boomers", "Wallabies", "Tall Blacks"],
+  correctAnswer: 1
+},
+{
+  question: "Which country hosted the 2022 FIFA World Cup?",
+  answers: ["Qatar", "Russia", "Brazil", "Germany"],
+  correctAnswer: 0
+},
+{
+  question: "Which Australian city hosted LIV Golf in 2023?",
+  answers: ["Melbourne", "Sydney", "Adelaide", "Perth"],
+  correctAnswer: 2
+},
+{
+  question: "What is the name of the international netball competition between Australia and New Zealand?",
+  answers: ["Conquerors Cup", "Rivalry Trophy", "Constellation Cup", "Silver Series"],
+  correctAnswer: 2
+},
+{
+  question: "Which team won the Women's Big Bash League in 2023?",
+  answers: ["Melbourne Renegades", "Sydney Sixers", "Brisbane Heat", "Adelaide Strikers"],
+  correctAnswer: 3
+},
+{
+  question: "Which SA-based wheelchair rugby player helped Australia to a Paralympic gold in Rio 2016?",
+  answers: ["Chris Bond", "Shae Graham", "Ryley Batt", "Michael Ozanne"],
+  correctAnswer: 0
+},
+{
+  question: "Which Australian tennis player won the Wimbledon women's singles title in 2021?",
+  answers: ["Ash Barty", "Samantha Stosur", "Ajla Tomljanović", "Daria Saville"],
+  correctAnswer: 0
+},
+{
+  question: "What colour belt is awarded last in karate?",
+  answers: ["Brown", "Blue", "Black", "Red"],
+  correctAnswer: 2
+},
+{
+  question: "Which city will host the 2026 Commonwealth Games before Victoria withdrew?",
+  answers: ["Gold Coast", "Geelong", "Bendigo", "Ballarat"],
+  correctAnswer: 3
+},
+{
+  question: "Which former SASI athlete won the Tour de France green jersey in 2022?",
+  answers: ["Michael Matthews", "Caleb Ewan", "Ben O'Connor", "Simon Clarke"],
+  correctAnswer: 0
+},
+{
+  question: "What shape is used for the centre circle in Australian Rules Football?",
+  answers: ["Rectangle", "Triangle", "Oval", "Circle"],
+  correctAnswer: 3
+},
+{
+  question: "Which event involves shooting, fencing, swimming, horse riding and running?",
+  answers: ["Decathlon", "Modern Pentathlon", "Biathlon", "Heptathlon"],
+  correctAnswer: 1
+},
+{
+  question: "Which team won the 2023 UEFA Champions League?",
+  answers: ["Real Madrid", "Inter Milan", "Manchester City", "Bayern Munich"],
+  correctAnswer: 2
+},
+{
+  question: "Which country did Australia defeat to win the 2023 Netball World Cup final?",
+  answers: ["England", "New Zealand", "Jamaica", "South Africa"],
+  correctAnswer: 0
+},
+{
+  question: "Who was the Matildas’ head coach during the 2023 FIFA Women’s World Cup?",
+  answers: ["Tom Sermanni", "Ante Milicic", "Tony Gustavsson", "Alen Stajcic"],
+  correctAnswer: 2
+},
+{
+  question: "Which city hosted the 2000 Olympic Games?",
+  answers: ["Melbourne", "Brisbane", "Sydney", "Adelaide"],
+  correctAnswer: 2
+},
+{
+  question: "Which Australian athlete holds the national record in men’s pole vault?",
+  answers: ["Steve Hooker", "Kurtis Marschall", "Dmitri Markov", "James Miller"],
+  correctAnswer: 2
+},
+{
+  question: "Which netball team plays their home games at Netball SA Stadium?",
+  answers: ["Vixens", "Thunderbirds", "Firebirds", "Giants"],
+  correctAnswer: 1
+},
+{
+  question: "What’s the maximum break in snooker?",
+  answers: ["147", "155", "150", "142"],
+  correctAnswer: 0
+},
+{
+  question: "Which Australian cricketer made a double century on Test debut in 2023?",
+  answers: ["Marnus Labuschagne", "Will Pucovski", "Steve Smith", "Matt Renshaw"],
+  correctAnswer: 3
+},
+{
+  question: "What do the rings on the Olympic flag represent?",
+  answers: ["5 Continents", "5 Gold Medals", "5 Olympic Values", "5 Champions"],
+  correctAnswer: 0
+},
+{
+  question: "Which Australian Paralympian has medalled at both Summer and Winter Games?",
+  answers: ["Simon Patmore", "Dylan Alcott", "Daniel Michel", "Ben Tudhope"],
+  correctAnswer: 0
+},
+{
+  question: "Which Australian won the women’s surfing world title in 2022?",
+  answers: ["Stephanie Gilmore", "Sally Fitzgibbons", "Tyler Wright", "Molly Picklum"],
+  correctAnswer: 0
+},
+{
+  question: "Which track cycling event involves racing without gears or brakes?",
+  answers: ["Madison", "Keirin", "Omnium", "Sprint"],
+  correctAnswer: 1
+},
+{
+  question: "Which former Aussie Rules player became an NFL punter in the USA?",
+  answers: ["Ben Graham", "Nick Riewoldt", "Brett Deledio", "Gary Ablett Jr."],
+  correctAnswer: 0
+},
+{
+  question: "Who carried the flag for Australia at the 2000 Olympic Games opening ceremony?",
+  answers: ["Susie O’Neill", "Cathy Freeman", "Andrew Gaze", "Ian Thorpe"],
+  correctAnswer: 1
+},
+{
+  question: "Which Australian sport uses the terms ‘rover’, ‘ruckman’, and ‘centre half-back’?",
+  answers: ["Rugby Union", "AFL", "Soccer", "Hockey"],
+  correctAnswer: 1
+},
+{
+  question: "Which venue hosted the 2022 Commonwealth Games athletics events?",
+  answers: ["Alexander Stadium", "Carrara Stadium", "Hampden Park", "Suncorp Stadium"],
+  correctAnswer: 0
+},
+{
+  question: "Which para-sport features the ‘boccia’ event?",
+  answers: ["Wheelchair Basketball", "Powerlifting", "Boccia", "Goalball"],
+  correctAnswer: 2
+},
+{
+  question: "Which cricketer became Australia’s Test captain in 2021?",
+  answers: ["Steve Smith", "Tim Paine", "Pat Cummins", "David Warner"],
+  correctAnswer: 2
+},
+{
+  question: "Which sport includes a 'no-ball' and 'leg bye'?",
+  answers: ["Baseball", "Hockey", "Cricket", "Softball"],
+  correctAnswer: 2
+},
+{
+  question: "Which Australian swimmer won gold in the 100m freestyle at Tokyo 2020?",
+  answers: ["Cate Campbell", "Bronte Campbell", "Emma McKeon", "Ariarne Titmus"],
+  correctAnswer: 2
+},
+{
+  question: "Which AFL club has the nickname 'Power'?",
+  answers: ["Adelaide Crows", "Geelong Cats", "Port Adelaide", "Fremantle Dockers"],
+  correctAnswer: 2
+},
+{
+  question: "Which team won the FIFA Women’s World Cup in 2023?",
+  answers: ["USA", "England", "Spain", "Sweden"],
+  correctAnswer: 2
+},
+{
+  question: "Which Australian city hosted the 2018 Commonwealth Games?",
+  answers: ["Melbourne", "Gold Coast", "Perth", "Darwin"],
+  correctAnswer: 1
+},
+{
+  question: "Which winter sport uses a sliding stone and a broom?",
+  answers: ["Luge", "Ice Hockey", "Curling", "Skeleton"],
+  correctAnswer: 2
+},
+{
+  question: "Which Australian won the men’s decathlon at the 2022 Commonwealth Games?",
+  answers: ["Cedric Dubler", "Jake Stein", "Ash Moloney", "Daniel Golubovic"],
+  correctAnswer: 3
+},
+{
+  question: "What is the name of Australia’s national rugby league team?",
+  answers: ["Wallabies", "Kangaroos", "Boomers", "Socceroos"],
+  correctAnswer: 1
+},
+{
+  question: "Which event combines cross-country skiing and rifle shooting?",
+  answers: ["Biathlon", "Modern Pentathlon", "Triathlon", "Nordic Combined"],
+  correctAnswer: 0
+},
+{
+  question: "Which Australian city hosted the 1956 Olympic Games?",
+  answers: ["Melbourne", "Sydney", "Perth", "Brisbane"],
+  correctAnswer: 0
+},
+{
+  question: "Which Australian women’s basketball team won silver at the 2008 Olympics?",
+  answers: ["Opals", "Boomers", "Gliders", "Fire"],
+  correctAnswer: 0
+},
+{
+  question: "Which Australian diver won gold in the men’s 3m springboard at Beijing 2008?",
+  answers: ["Matthew Mitcham", "Grant Nel", "Robert Newbery", "Loudy Tourky"],
+  correctAnswer: 0
+},
+{
+  question: "Which football code is played in the A-League?",
+  answers: ["Rugby Union", "Rugby League", "Australian Rules", "Soccer"],
+  correctAnswer: 3
+},
+{
+  question: "What is the standard length of an Olympic swimming pool?",
+  answers: ["25m", "33m", "50m", "100m"],
+  correctAnswer: 2
+},
+{
+  question: "Which state do the Tasmania JackJumpers represent in the NBL?",
+  answers: ["New South Wales", "Victoria", "Tasmania", "Queensland"],
+  correctAnswer: 2
+},
+{
+  question: "In what year was the South Australian Sports Institute (SASI) officially established?",
+  answers: ["1981", "1989", "1982", "1994"],
+  correctAnswer: 2
+},
+{
+  question: "Which Olympic Games were postponed due to the COVID-19 pandemic?",
+  answers: ["London 2012", "Rio 2016", "Tokyo 2020", "Paris 2024"],
+  correctAnswer: 2
+},
+{
+  question: "Which Australian rules football team plays at Adelaide Oval?",
+  answers: ["Hawthorn", "Adelaide Crows", "Essendon", "St Kilda"],
+  correctAnswer: 1
+},
+{
+  question: "Which position in netball is allowed to shoot goals?",
+  answers: ["Goal Defence", "Wing Attack", "Goal Shooter", "Centre"],
+  correctAnswer: 2
+},
+{
+  question: "Which Aussie swimmer won gold in the men’s 400m freestyle at Tokyo 2020?",
+  answers: ["Mack Horton", "Elijah Winnington", "Ian Thorpe", "Ariarne Titmus"],
+  correctAnswer: 1
+},
+{
+  question: "Which country did Australia beat in the 2023 Ashes to retain the urn?",
+  answers: ["England", "India", "South Africa", "New Zealand"],
+  correctAnswer: 0
+},
+{
+  question: "Which martial art features kata and kumite?",
+  answers: ["Taekwondo", "Karate", "Judo", "Aikido"],
+  correctAnswer: 1
+},
+{
+  question: "Which sport uses the term 'line-out'?",
+  answers: ["Rugby Union", "Soccer", "AFL", "Basketball"],
+  correctAnswer: 0
+},
+{
+  question: "Which Australian Paralympian won four golds at Tokyo 2020 in swimming?",
+  answers: ["Tim Hodge", "Ellie Cole", "Ben Popham", "Will Martin"],
+  correctAnswer: 3
+},
+{
+  question: "Which athlete lit the Olympic cauldron in Sydney 2000?",
+  answers: ["Susie O’Neill", "Andrew Gaze", "Cathy Freeman", "Ian Thorpe"],
+  correctAnswer: 2
+},
+{
+  question: "What is the nickname of Australia’s national women’s soccer team?",
+  answers: ["Opals", "Wallaroos", "Matildas", "Diamonds"],
+  correctAnswer: 2
+},
+{
+  question: "Which sport uses the scoring terms 'love', 'deuce', and 'advantage'?",
+  answers: ["Badminton", "Tennis", "Squash", "Table Tennis"],
+  correctAnswer: 1
+},
+{
+  question: "Which Australian won gold in the men's 100m freestyle at the Sydney 2000 Olympics?",
+  answers: ["Michael Klim", "Ian Thorpe", "Chris Fydler", "Ashley Callus"],
+  correctAnswer: 1
+},
+{
+  question: "Which team won the AFL Grand Final in 2020?",
+  answers: ["Richmond", "Geelong", "Collingwood", "West Coast"],
+  correctAnswer: 0
+},
+{
+  question: "What’s the regulation number of players on a soccer team on the field?",
+  answers: ["9", "10", "11", "12"],
+  correctAnswer: 2
+},
+{
+  question: "Which athlete holds the world record for men's pole vault as of 2024?",
+  answers: ["Renaud Lavillenie", "Sam Kendricks", "Mondo Duplantis", "Thiago Braz"],
+  correctAnswer: 2
+},
+{
+  question: "Which South Australian swimmer was part of the world record-breaking 4x100m freestyle relay in 2023?",
+  answers: ["Meg Harris", "Madi Wilson", "Mollie O’Callaghan", "Shayna Jack"],
+  correctAnswer: 1
+},
+{
+  question: "Which Paralympic sport uses a classification system from T11 to T13 for vision impairment?",
+  answers: ["Wheelchair Rugby", "Athletics", "Swimming", "Goalball"],
+  correctAnswer: 1
+},
+{
+  question: "Which Grand Slam is played on clay courts?",
+  answers: ["Wimbledon", "US Open", "Australian Open", "French Open"],
+  correctAnswer: 3
+},
+{
+  question: "Which city hosted the inaugural Winter Youth Olympic Games in 2012?",
+  answers: ["Lillehammer", "Innsbruck", "Turin", "Calgary"],
+  correctAnswer: 1
+},
+{
+  question: "Which Australian Olympian lit the cauldron in Brisbane 1982 Commonwealth Games?",
+  answers: ["Raelene Boyle", "Dawn Fraser", "Debbie Flintoff-King", "Lisa Curry"],
+  correctAnswer: 0
+},
+{
+  question: "In which sport do athletes compete in the 'Clean and Jerk'?",
+  answers: ["Gymnastics", "Weightlifting", "Wrestling", "Rowing"],
+  correctAnswer: 1
+},
+{
+  question: "Which Australian female gymnast made the vault final at the Tokyo 2020 Olympics?",
+  answers: ["Larrissa Miller", "Emily Whitehead", "Georgia Godwin", "Lauren Mitchell"],
+  correctAnswer: 2
+},
+{
+  question: "Which Aussie Paralympian won gold in wheelchair tennis and also played basketball for Australia?",
+  answers: ["Kurt Fearnley", "Madison de Rozario", "Dylan Alcott", "Ryley Batt"],
+  correctAnswer: 2
+},
+{
+  question: "Which sport features events called ‘Slopestyle’ and ‘Big Air’?",
+  answers: ["Snowboarding", "Surfing", "Skateboarding", "BMX"],
+  correctAnswer: 0
+},
+{
+  question: "Which cricket ground is known as the ‘home of cricket’?",
+  answers: ["Adelaide Oval", "Lord’s", "The Gabba", "SCG"],
+  correctAnswer: 1
+},
+{
+  question: "Which team won the 2022 NRL Premiership?",
+  answers: ["South Sydney", "Melbourne Storm", "Penrith Panthers", "Sydney Roosters"],
+  correctAnswer: 2
+},
+{
+  question: "Which Australian was the first woman to win Olympic gold in rowing?",
+  answers: ["Megan Still", "Kate Slatter", "Sally Robbins", "Kim Crow"],
+  correctAnswer: 1
+},
+{
+  question: "What’s the minimum number of players needed on court for a netball game to start per team?",
+  answers: ["5", "6", "7", "4"],
+  correctAnswer: 0
+},
+{
+  question: "What is the name of the cycling race that starts and finishes in Adelaide?",
+  answers: ["Tour de Victoria", "Tour Down Under", "Great Ocean Race", "National Criterium Series"],
+  correctAnswer: 1
+},
+{
+  question: "Which country hosted the first modern Summer Olympics in 1896?",
+  answers: ["France", "USA", "Germany", "Greece"],
+  correctAnswer: 3
+},
+{
+  question: "Who won the 2023 Brownlow Medal?",
+  answers: ["Nick Daicos", "Marcus Bontempelli", "Lachie Neale", "Zac Butters"],
+  correctAnswer: 2
+},
+{
+  question: "In what year did Australia first compete in the Winter Olympics?",
+  answers: ["1936", "1952", "1960", "1980"],
+  correctAnswer: 0
+},
+{
+  question: "Which SASI-supported sport features disciplines like épée, sabre, and foil?",
+  answers: ["Archery", "Fencing", "Shooting", "Boxing"],
+  correctAnswer: 1
+},
+{
+  question: "Which Australian Olympian was known as 'The Missile'?",
+  answers: ["James Magnussen", "Kyle Chalmers", "Michael Klim", "Geoff Huegill"],
+  correctAnswer: 0
+},
+{
+  question: "What is the nickname of Australia’s men’s field hockey team?",
+  answers: ["Boomers", "Stingers", "Kookaburras", "Wallabies"],
+  correctAnswer: 2
+},
+{
+    question: "Which Australian diver won gold in the 10m platform at Tokyo 2020?",
+    answers: ["Melissa Wu", "Sam Fricker", "Cassiel Rousseau", "Tom Daley"],
+    correctAnswer: 2
+  },
+  {
+    question: "Which city will host the 2032 Olympic and Paralympic Games?",
+    answers: ["Sydney", "Melbourne", "Brisbane", "Perth"],
+    correctAnswer: 2
+  },
+  {
+    question: "Which cricketing legend was known as the 'Don'?",
+    answers: ["Ricky Ponting", "Don Bradman", "Steve Waugh", "Adam Gilchrist"],
+    correctAnswer: 1
+  },
+  {
+    question: "Which nation did the Matildas defeat in the 2023 Women’s World Cup round of 16?",
+    answers: ["England", "France", "Denmark", "USA"],
+    correctAnswer: 2
+  },
+  {
+    question: "Which Australian Paralympian won gold in shot put at Tokyo 2020?",
+    answers: ["Maria Strong", "Vanessa Low", "Angela Ballard", "Madison de Rozario"],
+    correctAnswer: 0
+  },
+  {
+    question: "Which horse won the 2021 Melbourne Cup?",
+    answers: ["Verry Elleegant", "Incentivise", "Twilight Payment", "Tiger Moth"],
+    correctAnswer: 0
+  },
+  {
+    question: "Which Australian won gold in BMX freestyle at Tokyo 2020?",
+    answers: ["Caroline Buchanan", "Logan Martin", "Kai Sakakibara", "Natalya Diehm"],
+    correctAnswer: 1
+  },
+  {
+    question: "How long is one lap of a standard athletics track?",
+    answers: ["200m", "300m", "400m", "500m"],
+    correctAnswer: 2
+  },
+  {
+    question: "Which AFL team is nicknamed the Dockers?",
+    answers: ["West Coast", "Port Adelaide", "Fremantle", "St Kilda"],
+    correctAnswer: 2
+  },
+  {
+    question: "What colour jersey does the Tour de France overall leader wear?",
+    answers: ["Green", "White", "Polka Dot", "Yellow"],
+    correctAnswer: 3
+  },
+  {
+    question: "Which Australian city hosted the 2006 Commonwealth Games?",
+    answers: ["Sydney", "Perth", "Melbourne", "Brisbane"],
+    correctAnswer: 2
+  },
+  {
+    question: "Which Australian Paralympic swimmer won multiple gold medals at London 2012?",
+    answers: ["Ellie Cole", "Jacqueline Freney", "Lakeisha Patterson", "Katrina Porter"],
+    correctAnswer: 1
+  },
+  {
+    question: "What is the standard distance of a marathon?",
+    answers: ["40km", "42.195km", "41.3km", "39.6km"],
+    correctAnswer: 1
+  },
+  {
+    question: "Which South Australian stadium is home to Adelaide United?",
+    answers: ["Coopers Stadium", "Adelaide Oval", "Thebarton Oval", "Marden Sports Complex"],
+    correctAnswer: 0
+  },
+  {
+    question: "Which tennis Grand Slam is held in New York?",
+    answers: ["Australian Open", "US Open", "Wimbledon", "French Open"],
+    correctAnswer: 1
+  },
+ {
+  question: "Which Australian race walker was retroactively awarded the 2012 Olympic gold medal in the 50km walk after the original winner was disqualified for doping?",
+  answers: ["Nathan Deakes", "Jared Tallent", "Luke Adams", "Dane Bird-Smith"],
+  correctAnswer: 1
+},
+  {
+    question: "What is the name of Australia’s domestic netball league?",
+    answers: ["ANZ Premiership", "Netball Australia League", "Suncorp Super Netball", "Commonwealth League"],
+    correctAnswer: 2
+  },
+  {
+    question: "Which AFL club has the nickname 'Power'?",
+    answers: ["Essendon", "Port Adelaide", "GWS Giants", "Gold Coast Suns"],
+    correctAnswer: 1
+  },
+  {
+    question: "Which Australian cyclist won Olympic bronze in mountain biking in Tokyo 2020?",
+    answers: ["Simon Clarke", "Rebecca McConnell", "Cadel Evans", "Karrie Webb"],
+    correctAnswer: 1
+  },
+  {
+    question: "Which swimming stroke is considered the fastest?",
+    answers: ["Breaststroke", "Backstroke", "Freestyle", "Butterfly"],
+    correctAnswer: 2
+  },
+  {
+    question: "Which city is home to the Australian Institute of Sport (AIS)?",
+    answers: ["Melbourne", "Canberra", "Brisbane", "Sydney"],
+    correctAnswer: 1
+  },
+  {
+    question: "Which Paralympic classification is used for seated throwers with most severe impairment?",
+    answers: ["F11", "T54", "F32", "T13"],
+    correctAnswer: 2
+  },
+  {
+    question: "Which South Australian boxer won gold at the 2018 Commonwealth Games?",
+    answers: ["Jason Moloney", "Alex Winwood", "Skye Nicolson", "Harry Garside"],
+    correctAnswer: 3
+  },
+  {
+    question: "Which Australian city hosted the World Athletics Cross Country Championships in 2023?",
+    answers: ["Canberra", "Adelaide", "Newcastle", "Bathurst"],
+    correctAnswer: 3
+  },
+  {
+    question: "Which Australian wheelchair racer won silver in the T53 100m at Tokyo 2020?",
+    answers: ["Madison de Rozario", "Rheed McCracken", "Angie Ballard", "Jake Lappin"],
+    correctAnswer: 1
+  },
+  {
+    question: "Which Australian gymnast won bronze on the floor at Tokyo 2020?",
+    answers: ["Georgia Godwin", "Larrissa Miller", "Emily Whitehead", "None of the above"],
+    correctAnswer: 3
+  },
+  {
+    question: "Which state does the NRL team North Queensland Cowboys represent?",
+    answers: ["New South Wales", "Victoria", "Queensland", "Western Australia"],
+    correctAnswer: 2
+  },
+  {
+    question: "Who is the current captain of the Australian men's Test cricket team (as of 2024)?",
+    answers: ["Steve Smith", "Pat Cummins", "David Warner", "Marnus Labuschagne"],
+    correctAnswer: 1
+  },
+  {
+    question: "In which city is the Santos Tour Down Under cycling race traditionally held?",
+    answers: ["Sydney", "Melbourne", "Adelaide", "Canberra"],
+    correctAnswer: 2
+  },
+  {
+    question: "Which female Paralympian won gold in the T38 100m sprint at Tokyo 2020?",
+    answers: ["Madi de Rozario", "Vanessa Low", "Sophie Hahn", "Angela Ballard"],
+    correctAnswer: 2
+  },
+  {
+    question: "What is the name of the elite women's football league in Australia?",
+    answers: ["W-League", "Matildas League", "A-League Women", "Australian Women's League"],
+    correctAnswer: 2
+  },
+  {
+    question: "Which country has hosted the Summer Olympics the most times?",
+    answers: ["USA", "UK", "France", "Germany"],
+    correctAnswer: 0
+  },
+  {
+    question: "Which Adelaide-based AFL club was established in 1991?",
+    answers: ["Port Adelaide", "Adelaide Crows", "West Coast", "Fitzroy"],
+    correctAnswer: 1
+  },
+  {
+    question: "Which Australian won Olympic gold in women's 470 sailing at Tokyo 2020?",
+    answers: ["Tess Lloyd", "Lisa Darmanin", "Monique de Vries", "None of the above"],
+    correctAnswer: 3
+  },
+  {
+    question: "Which Australian basketballer was the WNBA MVP in 2007?",
+    answers: ["Liz Cambage", "Lauren Jackson", "Sandy Brondello", "Erin Phillips"],
+    correctAnswer: 1
+  },
+  {
+    question: "In which Paralympic sport would you find the classification BC1–BC4?",
+    answers: ["Goalball", "Powerlifting", "Boccia", "Wheelchair Rugby"],
+    correctAnswer: 2
+  },
+  {
+    question: "Which year did Cathy Freeman light the Olympic cauldron?",
+    answers: ["1996", "2000", "2004", "2008"],
+    correctAnswer: 1
+  },
+  {
+    question: "Which South Australian sportsperson won bronze in modern pentathlon at Tokyo 2020?",
+    answers: ["Lachlan Page", "Edward Fernon", "Marina Carrier", "None of the above"],
+    correctAnswer: 3
+  },
+  {
+    question: "Which Australian surfing champion won gold at the 2021 ISA World Surfing Games?",
+    answers: ["Julian Wilson", "Mick Fanning", "Owen Wright", "Sally Fitzgibbons"],
+    correctAnswer: 3
+  },
+  {
+    question: "Which sport is associated with the Hopman Cup?",
+    answers: ["Cricket", "Tennis", "Golf", "Badminton"],
+    correctAnswer: 1
+  },
+  {
+    question: "Who won the 2022 AFLW Best and Fairest award?",
+    answers: ["Erin Phillips", "Maddy Prespakis", "Ebony Marinoff", "Monique Conti"],
+    correctAnswer: 3
+  },
+  {
+    question: "Which Australian Paralympian holds the record for most career medals?",
+    answers: ["Matthew Cowdrey", "Kurt Fearnley", "Ellie Cole", "Jacqueline Freney"],
+    correctAnswer: 0
+  },
+  {
+    question: "Which country hosted the 2019 Rugby World Cup?",
+    answers: ["South Africa", "England", "Japan", "New Zealand"],
+    correctAnswer: 2
+  },
+  {
+    question: "Which Australian baseball team is based in South Australia?",
+    answers: ["Brisbane Bandits", "Sydney Blue Sox", "Adelaide Giants", "Melbourne Aces"],
+    correctAnswer: 2
+  },
+  {
+    question: "Which event combines cross-country skiing and rifle shooting?",
+    answers: ["Modern Pentathlon", "Biathlon", "Nordic Combined", "Skiathlon"],
+    correctAnswer: 1
+  },
+  {
+    question: "Which sport uses the term 'hat trick' for three goals by the same player?",
+    answers: ["Cricket", "Football (soccer)", "Hockey", "All of the above"],
+    correctAnswer: 3
+  },
+  {
+    question: "Which Australian state hosts the Great Ocean Road Running Festival?",
+    answers: ["New South Wales", "Victoria", "Queensland", "Tasmania"],
+    correctAnswer: 1
+  },
+  {
+    question: "Which Australian rules footballer has won the most Brownlow Medals?",
+    answers: ["Gary Ablett Jr", "Nat Fyfe", "Haydn Bunton", "Dustin Martin"],
+    correctAnswer: 2
+  },
+  {
+    question: "Which former SASI athlete won Olympic gold in rowing in Beijing 2008?",
+    answers: ["Chris Morgan", "James Tomkins", "David Crawshay", "Duncan Free"],
+    correctAnswer: 0
+  },
+  {
+    question: "Which Australian golfer won The Masters in 2013?",
+    answers: ["Adam Scott", "Jason Day", "Greg Norman", "Cameron Smith"],
+    correctAnswer: 0
+  },
+  {
+  question: "What colour medals did Australia win in men's hockey at Tokyo 2020?",
+  answers: ["Gold", "Silver", "Bronze", "None"],
+  correctAnswer: 1
+},
+{
+  question: "Which former Australian Diamonds player later served as head coach of the South Australian Sports Institute (SASI) netball program?",
+  answers: ["Sharelle McMahon", "Jenny Borlase", "Lisa Alexander", "Simone McKinnis"],
+  correctAnswer: 1
+},
+{
+  question: "Which Australian athlete became the youngest male Olympic gold medallist in rowing at Tokyo 2020?",
+  answers: ["Jack Cleary", "Alexander Purnell", "Angus Widdicombe", "Thomas Cornelis"],
+  correctAnswer: 1
+},
+{
+  question: "Which Australian wheelchair rugby player captained the Steelers to gold at the 2016 Rio Paralympics?",
+  answers: ["Chris Bond", "Ryley Batt", "Michael Ozanne", "Ben Fawcett"],
+  correctAnswer: 1
+},
+{
+  question: "Which stadium hosted the 2023 AFL Grand Final?",
+  answers: ["MCG", "Optus Stadium", "Adelaide Oval", "Marvel Stadium"],
+  correctAnswer: 0
+},
+{
+  question: "Which Australian cyclist won a complete set of Olympic medals (gold, silver, and bronze) across three consecutive Games from 1992 to 2000?",
+  answers: ["Brad McGee", "Stuart O'Grady", "Brett Aitken", "Dean Woods"],
+  correctAnswer: 2
+},
+{
+  question: "Who won the 2023 Brownlow Medal?",
+  answers: ["Nick Daicos", "Marcus Bontempelli", "Lachie Neale", "Zak Butters"],
+  correctAnswer: 2
+},
+{
+  question: "Which Australian wheelchair basketball player co-captained the Rollers to their first Paralympic gold medal at the 1996 Atlanta Games?",
+  answers: ["Troy Sachs", "David Gould", "Brad Ness", "Michael Callahan"],
+  correctAnswer: 1
+},
+{
+  question: "What is the maximum number of players per team in rugby union on the field?",
+  answers: ["13", "15", "11", "14"],
+  correctAnswer: 1
+},
+{
+  question: "Who were the Australian rowers that won gold in the PR3 Mixed Double Sculls at the 2024 Paris Paralympics?",
+  answers: ["Erik Horrie and Kathryn Ross", "James Talbot and Alexandra Viney", "Jed Altschwager and Nikki Ayers", "Tom Birtwhistle and Susannah Lutze"],
+  correctAnswer: 2
+},
+{
+  question: "What is the nickname of the Australian national men’s basketball team?",
+  answers: ["Boomers", "Wallabies", "Socceroos", "Kookaburras"],
+  correctAnswer: 0
+},
+{
+  question: "Which South Australian swimmer won Olympic gold in 2008 in the 100m freestyle relay?",
+  answers: ["Sophie Edington", "Emily Seebohm", "Melanie Schlanger", "None of the above"],
+  correctAnswer: 3
+},
+{
+  question: "Which sport uses the terms 'scrum', 'line-out', and 'try'?",
+  answers: ["Football", "Rugby", "Cricket", "Basketball"],
+  correctAnswer: 1
+},
+{
+  question: "Who won the men’s singles title at the Australian Open in 2023?",
+  answers: ["Rafael Nadal", "Novak Djokovic", "Stefanos Tsitsipas", "Carlos Alcaraz"],
+  correctAnswer: 1
+},
+{
+  question: "Which sport would you associate with the Davis Cup?",
+  answers: ["Golf", "Cycling", "Tennis", "Rugby"],
+  correctAnswer: 2
+},
+{
+  question: "Which Olympic sport takes place in a velodrome?",
+  answers: ["Speed skating", "Cycling", "Swimming", "Gymnastics"],
+  correctAnswer: 1
+},
+{
+  question: "Who won the 2023 AFL Grand Final?",
+  answers: ["Collingwood", "Brisbane Lions", "Melbourne", "Carlton"],
+  correctAnswer: 0
+},
+{
+  question: "Which Australian Paralympian switched from swimming to wheelchair tennis?",
+  answers: ["Ahmed Kelly", "Dylan Alcott", "Ellie Cole", "Curtis McGrath"],
+  correctAnswer: 1
+},
+{
+  question: "Which Australian surfer famously survived a shark attack during a competition?",
+  answers: ["Mick Fanning", "Julian Wilson", "Tyler Wright", "Owen Wright"],
+  correctAnswer: 0
+},
+{
+  question: "Which Australian athlete was the first woman to win Olympic gold in freestyle wrestling?",
+  answers: ["Jayne Craig", "Sally Pearson", "Carissa Holland", "None of the above"],
+  correctAnswer: 3
+},
+{
+  question: "Which team won the 2023 Suncorp Super Netball championship?",
+  answers: ["NSW Swifts", "West Coast Fever", "Adelaide Thunderbirds", "Melbourne Vixens"],
+  correctAnswer: 2
+},
+{
+  question: "Which Australian women's cricket captain led the team to T20 World Cup wins in 2018 and 2020?",
+  answers: ["Ellyse Perry", "Meg Lanning", "Alyssa Healy", "Rachael Haynes"],
+  correctAnswer: 1
+},
+{
+  question: "Which former SASI athlete was named the 2024 Suncorp Super Netball Player of the Year?",
+  answers: ["Shamera Sterling", "Georgie Horjus", "Kiera Austin", "Paige Hadley"],
+  correctAnswer: 1
+},
+{
+  question: "Which sport features the Coppa Italia, La Liga and UEFA Champions League?",
+  answers: ["Basketball", "Cricket", "Football (soccer)", "Athletics"],
+  correctAnswer: 2
+},
+{
+  question: "Which Winter Olympic event combines ski jumping and cross-country skiing?",
+  answers: ["Biathlon", "Skiathlon", "Nordic Combined", "Freestyle skiing"],
+  correctAnswer: 2
+},
+{
+  question: "Which club won the WBBL championship in 2023?",
+  answers: ["Adelaide Strikers", "Sydney Sixers", "Melbourne Stars", "Brisbane Heat"],
+  correctAnswer: 0
+},
+{
+  question: "What is the official ball of Olympic table tennis made of?",
+  answers: ["Rubber", "Plastic", "Celluloid", "Carbon Fiber"],
+  correctAnswer: 2
+},
+{
+  question: "Which SASI-supported para-cyclist won bronze in the Women's C4 Time Trial at the Tokyo 2020 Paralympic Games?",
+  answers: ["Paige Greco", "Emily Petricola", "Meg Lemon", "Amanda Reid"],
+  correctAnswer: 2
+},
+{
+  question: "Which Australian city has hosted the FIBA Women’s Basketball World Cup?",
+  answers: ["Sydney", "Melbourne", "Perth", "Brisbane"],
+  correctAnswer: 0
+},
+{
+  question: "Which athlete won gold in the men's 10,000m at the 2023 World Athletics Championships?",
+  answers: ["Joshua Cheptegei", "Mo Farah", "Jakob Ingebrigtsen", "Grant Fisher"],
+  correctAnswer: 0
+}
+
+];
+
+
+    function displayCurrentDate() {
+      const now = new Date();
+      const adlOffset = 10.5 * 60;
+      const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+      const adelaideTime = new Date(utc + adlOffset * 60000);
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('current-date').textContent = adelaideTime.toLocaleDateString('en-AU', options);
+    }
+
+    function getTodaysQuestion() {
+      const now = new Date();
+      const adlOffset = 10.5 * 60;
+      const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+      const adelaideTime = new Date(utc + adlOffset * 60000);
+      const startOfYear = new Date(adelaideTime.getFullYear(), 0, 0);
+      const dayOfYear = Math.floor((adelaideTime - startOfYear) / 86400000);
+      return quizQuestions[dayOfYear % quizQuestions.length];
+    }
+
+    function displayQuiz() {
+      const todaysQuiz = getTodaysQuestion();
+      document.getElementById('question').textContent = todaysQuiz.question;
+      const answersContainer = document.getElementById('answers-container');
+      answersContainer.innerHTML = '';
+      todaysQuiz.answers.forEach((answer, index) => {
+        const button = document.createElement('button');
+        button.className = 'answer-btn text-left p-3 border border-indigo-200 rounded-lg font-medium hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500';
+        button.textContent = answer;
+        button.dataset.index = index;
+        button.addEventListener('click', checkAnswer);
+        answersContainer.appendChild(button);
+      });
+    }
+
+    function triggerConfetti() {
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#507eee', '#ff5e30', '#4ade80', '#fbbf24', '#8b5cf6']
+      });
+    }
+
+    function checkAnswer(event) {
+      const selectedIndex = parseInt(event.target.dataset.index);
+      const todaysQuiz = getTodaysQuestion();
+      const feedbackDiv = document.getElementById('feedback');
+      const feedbackText = document.getElementById('feedback-text');
+
+      document.querySelectorAll('.answer-btn').forEach(btn => {
+        btn.classList.remove('correct', 'incorrect');
+      });
+
+      if (selectedIndex === todaysQuiz.correctAnswer) {
+        event.target.classList.add('correct');
+        feedbackText.textContent = "Correct! Well done! 🎉";
+        feedbackText.className = "font-medium text-green-700";
+        triggerConfetti();
+      } else {
+        event.target.classList.add('incorrect');
+        feedbackText.textContent = "Try again! 🔄";
+        feedbackText.className = "font-medium text-red-700";
+      }
+
+      feedbackDiv.classList.remove('hidden');
+    }
+
+    function initQuiz() {
+      displayCurrentDate();
+      displayQuiz();
+    }
+
+    window.addEventListener('DOMContentLoaded', initQuiz);
+  </script>
+</body>
+</html>
